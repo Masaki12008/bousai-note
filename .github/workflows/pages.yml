@@ -24,7 +24,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - run: npm install --no-save playwright@1.48.2 && npx playwright install --with-deps chromium
+      - run: npm install --no-save playwright@1.63.0 && npx playwright install --with-deps chromium
       - run: python3 build-site.py dist
       - run: |
           python3 -m http.server 8765 &
