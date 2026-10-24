@@ -1,0 +1,53 @@
+# 公開前の確認中は --noindex（検索に載せない）。本公開のときに --release に変える。
+# リポジトリの Settings → Pages → Source を「GitHub Actions」にしておくこと。
+name: Deploy to GitHub Pages
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: pages
+  cancel-in-progress: true
+jobs:
+  test:
+    # 公開の前に試験をすべて通す（1つでも落ちたら公開しない）
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - run: npm install --no-save playwright@1.48.2 && npx playwright install --with-deps chromium
+      - run: python3 build-site.py dist
+      - run: |
+          python3 -m http.server 8765 &
+          (cd dist && python3 -m http.server 8767 &)
+          sleep 2
+          node tests/e2e.mjs
+          node tests/e2e-phase2.mjs
+          node tests/e2e-site.mjs
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python3 build-site.py --noindex dist
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+      - id: deployment
+        uses: actions/deploy-pages@v4

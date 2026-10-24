@@ -1,0 +1,619 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>わが家の防災ノート</title>
+<!--SEO_HEAD-->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://cyberjapandata.gsi.go.jp; connect-src 'self' https://msearch.gsi.go.jp https://cyberjapandata.gsi.go.jp; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="style.css">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#2F5D8A">
+</head>
+<body data-root="./" data-default-tab="guide">
+<header class="site-header">
+  <div class="wrap header-inner">
+    <div class="brand">
+      <svg class="logo" width="38" height="38" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M8 31 L32 11 L56 31"></path><path d="M15 26 V53 H49 V26"></path><path d="M26 53 V38 H38 V53 Z" fill="currentColor"></path>
+      </svg>
+      <div>
+        <p class="brand-name">わが家の防災ノート</p>
+        <p class="brand-sub">いえのこと帖</p>
+      </div>
+    </div>
+    <div class="size-switch" role="group" aria-label="文字の大きさ">
+      <span class="size-label" aria-hidden="true">文字</span>
+      <button type="button" class="size-btn" data-size="m" aria-pressed="true">標準</button>
+      <button type="button" class="size-btn" data-size="l" aria-pressed="false">大</button>
+      <button type="button" class="size-btn" data-size="xl" aria-pressed="false">特大</button>
+      <button type="button" class="size-btn ruby-btn" id="ruby-btn" aria-pressed="false">ふりがな</button>
+    </div>
+    <p id="size-status" class="size-status" role="status"></p>
+  </div>
+</header>
+
+<div id="share-banner" class="banner" hidden>
+  <div class="wrap banner-inner">
+    <h2 class="banner-title">家族から「決め事」が届いています</h2>
+    <p id="share-line-note" class="banner-warn" hidden>いまLINEの中で開いています。ここで読み込むと、ホーム画面のアプリやSafari・Chromeには入りません。画面の右上か右下のメニューから「ブラウザで開く」（iPhoneは「Safariで開く」）を押し、開き直してから読み込んでください。</p>
+    <p>読み込むと、この端末の決め事と家族の人数が、次の内容に置きかわります。あとで「元に戻す」こともできます。</p>
+    <dl id="share-preview" class="preview-list"></dl>
+    <div class="row wrap-row">
+      <button type="button" id="share-accept" class="btn primary">この内容を読み込む</button>
+      <button type="button" id="share-dismiss" class="btn">読み込まない</button>
+    </div>
+  </div>
+</div>
+<div id="share-error" class="banner banner-error" role="alert" hidden>
+  <div class="wrap banner-inner">
+    <p id="share-error-text"></p>
+    <button type="button" id="share-error-close" class="btn">閉じる</button>
+  </div>
+</div>
+<div id="update-banner" class="banner" hidden>
+  <div class="wrap banner-inner row wrap-row">
+    <p>内容を新しくしました。読み込み直すと、最新の内容になります。</p>
+    <button type="button" id="update-reload" class="btn">読み込み直す</button>
+  </div>
+</div>
+<div id="undo-banner" class="banner" hidden>
+  <div class="wrap banner-inner row wrap-row">
+    <p>決め事を読み込みました。</p>
+    <button type="button" id="undo-import" class="btn">元に戻す</button>
+  </div>
+</div>
+
+<main class="wrap main">
+<!--INTRO-->
+
+  <!-- いざという時 -->
+  <section id="panel-guide" class="panel" role="tabpanel" aria-labelledby="tab-guide">
+
+    <h2 class="section-title" id="action-title">いま起きている災害は？</h2>
+    <p class="note">押すと、すぐにやることが出ます。</p>
+    <div id="action-buttons" class="action-grid"></div>
+    <div id="action-panel" class="action-panel" hidden tabindex="-1"></div>
+
+    <div id="my-rules-quick" class="quick" hidden>
+      <h2 class="card-title">わが家の決め事</h2>
+      <dl id="my-rules-list" class="quick-list"></dl>
+      <details id="my-rules-more" class="quick-more" hidden>
+        <summary>決め事をすべて見る</summary>
+        <dl id="my-rules-rest" class="quick-list detail-body"></dl>
+      </details>
+    </div>
+    <p id="my-rules-empty" class="quick-empty-line" hidden>わが家の決め事は、まだありません。<a href="#rules">決め事を作る（約3分）</a></p>
+
+    <h2 class="section-title">緊急の連絡</h2>
+    <div class="call-main">
+      <a class="call call-big" href="tel:119"><strong>119</strong><span>火事・救急</span></a>
+      <a class="call call-big" href="tel:110"><strong>110</strong><span>事件・事故</span></a>
+    </div>
+    <div class="call-sub">
+      <a class="call" href="tel:171"><strong>171</strong><span>災害用伝言ダイヤル</span></a>
+      <a class="call" href="tel:%237119"><strong class="nowrap">#7119</strong><span>救急車を呼ぶか迷ったら（使えない地域もあります）</span></a>
+      <a class="call" href="tel:%238000"><strong class="nowrap">#8000</strong><span>子どもの急な病気の相談</span></a>
+    </div>
+    <div class="tip">
+      <strong>声を出せない・耳が聞こえにくいとき</strong>
+      <ul>
+        <li>NET119緊急通報システム（スマホの画面から119番に通報。お住まいの消防本部で事前の登録が必要）</li>
+        <li>110番アプリシステム（文字で110番に通報。事前の登録が必要）</li>
+        <li>171は音声の電話です。家族への連絡は、文字で残せる「web171」やLINE・SMSで</li>
+      </ul>
+    </div>
+
+    <h2 class="section-title">家族の無事を確かめる</h2>
+    <p class="note">大きな災害の直後は電話がつながりにくくなります。音声の電話より、伝言サービスや文字のメッセージを使いましょう。</p>
+    <div class="guide-list">
+      <details open>
+        <summary>災害用伝言ダイヤル（171）</summary>
+        <div class="detail-body">
+          <table class="howto">
+            <tbody>
+              <tr><th scope="row">伝言を残す</th><td><kbd>171</kbd> → <kbd>1</kbd> → 決めておいた電話番号（市外局番から）→ 30秒以内で話す</td></tr>
+              <tr><th scope="row">伝言を聞く</th><td><kbd>171</kbd> → <kbd>2</kbd> → 決めておいた電話番号（市外局番から）→ 再生</td></tr>
+            </tbody>
+          </table>
+          <p>家族全員が<strong>同じ電話番号</strong>で残すことが大事です。どの番号を使うかは「決め事」に書いておけます。</p>
+          <p class="links-inline"><a href="https://www.ntt-east.co.jp/saigai/voice171/" target="_blank" rel="noopener">NTT東日本の説明</a><a href="https://www.ntt-west.co.jp/dengon/" target="_blank" rel="noopener">NTT西日本の説明</a></p>
+        </div>
+      </details>
+      <details>
+        <summary>災害用伝言板（web171）</summary>
+        <div class="detail-body">
+          <p>インターネットで、伝言を文字で残したり読んだりできます。電話番号を入れて使います。</p>
+          <p><a href="https://www.web171.jp/" target="_blank" rel="noopener">災害用伝言板 web171</a></p>
+        </div>
+      </details>
+      <details>
+        <summary>携帯電話会社の災害用伝言板</summary>
+        <div class="detail-body">
+          <p>大きな災害のときに開設されます。各社の伝言板は「J-anpi」でまとめて探せます。</p>
+          <ul class="links-list">
+            <li><a href="https://anpi.jp/" target="_blank" rel="noopener">J-anpi（安否情報まとめて検索）</a></li>
+            <li><a href="https://dengon.docomo.ne.jp/top.cgi" target="_blank" rel="noopener">ドコモ 災害用伝言板</a></li>
+            <li><a href="https://dengon.ezweb.ne.jp/" target="_blank" rel="noopener">au 災害用伝言板</a></li>
+            <li><a href="https://dengon.softbank.ne.jp/" target="_blank" rel="noopener">ソフトバンク 災害用伝言板</a></li>
+          </ul>
+          <p>楽天モバイルなどほかの会社は、各社のサイト・アプリで確認してください。格安SIMの場合は、web171やJ-anpiを使うと確実です。</p>
+        </div>
+      </details>
+      <details>
+        <summary>LINEなどのメッセージ</summary>
+        <div class="detail-body">
+          <p>家族のグループを作っておき、「無事」「〇〇にいる」と短く送ります。大きな災害のときは、LINEに安否を知らせる機能が出ることがあります。</p>
+          <p>電池を節約するため、長い通話や動画は控えましょう。</p>
+        </div>
+      </details>
+      <div class="tip">
+        <strong>ふだんから練習できます</strong>
+        <p>171・web171・携帯各社の伝言板は、毎月1日・15日、正月三が日（1月1日〜3日）、防災とボランティア週間（1月15日〜21日）、防災週間（8月30日〜9月5日）に体験できます。</p>
+      </div>
+    </div>
+
+    <h2 class="section-title">避難のタイミング（警戒レベル）</h2>
+    <ul class="level-summary">
+      <li class="ls l3"><b>レベル3</b>：高齢者・障害のある人・乳幼児と、その支援者は避難</li>
+      <li class="ls l4"><b>レベル4</b>：危険な場所から全員避難。<b>レベル4までに必ず避難</b></li>
+      <li class="ls l5"><b>レベル5</b>：命を守る最善の行動を。<b>レベル5を待たない</b></li>
+    </ul>
+    <p class="note">気象庁の警報なども、名前に「レベル4」とあれば避難指示と同じ段階です。</p>
+    <details class="levels-more">
+      <summary>警戒レベルとキキクルを詳しく見る</summary>
+      <div class="detail-body">
+      <p class="note">対象は、ハザードマップで危険な区域にいる人です。区域の外で家が安全なら、避難所へ行かず家にとどまる（在宅避難）こともできます。</p>
+      <p class="note">市区町村は「避難情報」を、気象庁などは同じ段階の「防災気象情報」を出します。2026年5月29日から、気象庁の情報の名前にもレベルの数字が付きました。<b>名前に「レベル4」とあれば、避難指示と同じ段階です。</b></p>
+      <div class="levels">
+        <div class="level l5">
+          <div class="level-head"><strong>レベル5 緊急安全確保</strong><span class="issuer">市区町村が出す</span></div>
+          <span>すでに災害が起きているか、起きる寸前。命を守る最善の行動を。<b>必ず出るとは限らず、出たときには安全に避難できないことも。レベル5を待たないで。</b></span>
+          <span class="jma-names">同じ段階の気象庁などの情報：<span class="nowrap">レベル5氾濫特別警報</span>・<span class="nowrap">レベル5大雨特別警報</span>・<span class="nowrap">レベル5土砂災害特別警報</span>・<span class="nowrap">レベル5高潮特別警報</span></span>
+        </div>
+        <div class="level l4">
+          <div class="level-head"><strong>レベル4 避難指示</strong><span class="issuer">市区町村が出す</span></div>
+          <span>危険な場所から全員避難。<b>レベル4までに必ず避難</b>。</span>
+          <span class="jma-names">同じ段階の気象庁などの情報：<span class="nowrap">レベル4氾濫危険警報</span>・<span class="nowrap">レベル4大雨危険警報</span>・<span class="nowrap">レベル4土砂災害危険警報</span>・<span class="nowrap">レベル4高潮危険警報</span></span>
+        </div>
+        <div class="level l3">
+          <div class="level-head"><strong>レベル3 高齢者等避難</strong><span class="issuer">市区町村が出す</span></div>
+          <span>高齢者・障害のある人・乳幼児など避難に時間がかかる人と、<b>その支援者</b>は避難。ほかの人も準備を。</span>
+          <span class="jma-names">同じ段階の気象庁などの情報：<span class="nowrap">レベル3氾濫警報</span>・<span class="nowrap">レベル3大雨警報</span>・<span class="nowrap">レベル3土砂災害警報</span>・<span class="nowrap">レベル3高潮警報</span></span>
+        </div>
+        <div class="level l2">
+          <div class="level-head"><strong>レベル2</strong><span class="issuer">気象庁などが出す</span></div>
+          <span><span class="nowrap">レベル2氾濫注意報</span>・<span class="nowrap">レベル2大雨注意報</span>・<span class="nowrap">レベル2土砂災害注意報</span>・<span class="nowrap">レベル2高潮注意報</span>。ハザードマップで避難先と道順を確認。</span>
+        </div>
+        <div class="level l1">
+          <div class="level-head"><strong>レベル1</strong><span class="issuer">気象庁が出す</span></div>
+          <span>早期注意情報。最新の情報に注意し、心構えを。</span>
+        </div>
+      </div>
+      <div class="tip">
+        <strong>市区町村の発表を待たずに動くための目安</strong>
+        <p>気象庁の「キキクル（危険度分布）」の色：黄（レベル2相当）→ 赤（レベル3相当）→ 紫（レベル4相当）→ 黒（レベル5相当）。<b>紫になったら避難を。</b>色の意味は、キキクルの画面の説明でも確かめてください。</p>
+        <p class="fine">※ 暴風・大雪など、警戒レベルに当てはまらない警報・注意報の名前は変わっていません。最新の内容は<a href="https://www.jma.go.jp/jma/kishou/know/bosai/alertlevel.html" target="_blank" rel="noopener">気象庁「防災気象情報と警戒レベルとの対応について」</a>で確認してください。</p>
+      </div>
+      </div>
+    </details>
+
+    <h2 class="section-title">最新の情報を見る</h2>
+    <ul class="links-list cards">
+      <li><a href="https://www.jma.go.jp/bosai/" target="_blank" rel="noopener"><strong>気象庁 防災情報</strong><span>警報・注意報、地震・津波</span></a></li>
+      <li><a href="https://www.jma.go.jp/bosai/risk/" target="_blank" rel="noopener"><strong>キキクル（危険度分布）</strong><span>大雨による土砂災害・浸水・洪水の危険度を地図で</span></a></li>
+      <li><a href="https://www.river.go.jp/" target="_blank" rel="noopener"><strong>川の防災情報</strong><span>川の水位やライブカメラ</span></a></li>
+      <li><a href="https://disaportal.gsi.go.jp/" target="_blank" rel="noopener"><strong>ハザードマップポータルサイト</strong><span>自宅や職場の災害の危険</span></a></li>
+      <li><a href="https://www.bousai.go.jp/" target="_blank" rel="noopener"><strong>内閣府 防災情報</strong><span>国の防災の情報</span></a></li>
+      <li><a href="https://radiko.jp/" target="_blank" rel="noopener"><strong>radiko</strong><span>スマホでラジオを聞く</span></a></li>
+    </ul>
+    <p class="note">市区町村の防災メール・防災アプリにも登録しておきましょう。避難の情報は、そこから最初に届きます。</p>
+
+    <div id="install-card" class="install-card" data-full-only hidden>
+      <h2 class="card-title">ホーム画面に追加しておきましょう</h2>
+      <p>ホーム画面に追加すると、いざという時にすぐ開けて、電波がなくても使えます。入力した内容も消えにくくなります。</p>
+      <button type="button" id="install-btn" class="btn primary" hidden>ホーム画面に追加する</button>
+      <details>
+        <summary>iPhone・iPadの場合</summary>
+        <div class="detail-body"><p>Safariで開き、画面下の共有ボタン（四角から矢印が出たマーク）を押して「ホーム画面に追加」を選びます。LINEなどのアプリの中で開いている場合は、まずSafariで開き直してください。</p></div>
+      </details>
+      <details>
+        <summary>Androidの場合</summary>
+        <div class="detail-body"><p>Chromeで開き、右上の「︙」メニューから「ホーム画面に追加」または「アプリをインストール」を選びます。</p></div>
+      </details>
+      <button type="button" id="install-dismiss" class="btn small">今は追加しない</button>
+    </div>
+
+    <div id="progress" class="progress-card">
+      <h2 class="card-title">ふだんの準備の進み具合</h2>
+      <ul id="progress-list" class="progress-list"></ul>
+    </div>
+  </section>
+
+  <!-- 避難場所 -->
+  <section id="panel-evac" class="panel" role="tabpanel" aria-labelledby="tab-evac" hidden>
+    <h2 class="section-title">災害の種類ごとの避難場所</h2>
+    <div class="caution caution-top">
+      <ul>
+        <li><strong>近い場所が安全とは限りません。</strong>川の向こう側や、浸水・土砂の危険がある道を通る場所もあります。避難場所と道順は、ハザードマップで確かめてください。</li>
+        <li><strong>指定されていても、開いているとは限りません。</strong>どこが開いているかは、市区町村の発表で確認してください。</li>
+      </ul>
+    </div>
+    <p class="note">ここに出るのは「指定緊急避難場所」（命を守るために、まず逃げる場所）です。家に戻れないときに過ごす「指定避難所」とは違う場合があります。災害の種類によって、使える場所が違います。指定避難所の場所は、市区町村のハザードマップや防災のページで確かめてください。</p>
+
+    <div class="caution" data-preview-only hidden>
+      <strong>この確認用ページでは、避難場所の検索は動きません</strong>
+      <p>確認用ページは外部のデータを読み込めないため、国土地理院の避難場所データを取得できません。公開版では、住所や現在地から災害の種類ごとの避難場所が表示されます。それまでは、ハザードマップポータルサイトで確認してください。</p>
+      <p><a href="https://disaportal.gsi.go.jp/" target="_blank" rel="noopener">ハザードマップポータルサイト</a></p>
+    </div>
+
+    <div class="hazard-card">
+      <h3 class="sub-title">まず、自宅の危険を確かめる</h3>
+      <p class="note">ハザードマップで自宅の場所を見ながら答えてください。避難が必要か、家にとどまれるかの目安が分かります。</p>
+      <p><a class="btn small" href="https://disaportal.gsi.go.jp/" target="_blank" rel="noopener">ハザードマップポータルサイトを開く</a></p>
+      <form id="hazard-form" class="hazard-form" novalidate></form>
+      <div id="hazard-result" class="hazard-result" aria-live="polite"></div>
+    </div>
+
+    <h3 class="sub-title">近くの避難場所を探す</h3>
+    <form id="addr-form" class="search-box" data-full-only novalidate>
+      <label for="addr" class="field-label">自宅の住所で探す</label>
+      <p class="field-help">番地までは要りません（町名までで探せます）。入れた文字は、位置を調べるために国土地理院のサービスに送られます。</p>
+      <div class="row wrap-row">
+        <input id="addr" type="text" placeholder="例：長野市大字長野元善町" autocomplete="street-address">
+        <button type="submit" class="btn primary">探す</button>
+      </div>
+      <p class="fine">住所で探した結果は「自宅の周り」としてこの端末に保存し、電波がないときも見られます。</p>
+      <div class="row wrap-row">
+        <button type="button" id="use-geo" class="btn">いる場所（現在地）で探す</button>
+      </div>
+      <p class="fine">現在地はこの検索にだけ使い、保存しません。自宅の周りの結果も消えません。</p>
+    </form>
+
+    <p id="evac-status" class="status" role="status"></p>
+    <div id="evac-switch" class="row wrap-row" hidden>
+      <button type="button" id="show-home" class="btn">自宅の周りの結果に戻す</button>
+    </div>
+    <div id="map" class="map" hidden></div>
+    <div id="evac-results"></div>
+  </section>
+
+  <!-- 家族の決め事 -->
+  <section id="panel-rules" class="panel" role="tabpanel" aria-labelledby="tab-rules" hidden>
+    <h2 class="section-title">家族の決め事</h2>
+    <p class="note"><b>書いた内容は、この端末の中に自動で保存されます。途中で閉じても大丈夫です。</b>書けるところからで構いません。</p>
+
+    <form id="rules-form" class="stack" novalidate>
+      <fieldset>
+        <legend>集合場所</legend>
+        <label for="r-meet1">家の近くの集合場所（家にいられないとき）</label>
+        <input id="r-meet1" name="meet1" type="text" aria-describedby="r-meet1-ex">
+        <p class="field-help example" id="r-meet1-ex">例：家の前の公園の時計の下</p>
+      </fieldset>
+
+      <fieldset>
+        <legend>災害の種類ごとの避難先</legend>
+        <p class="field-help">災害の種類によって、安全な避難先は違います。「避難場所」のページで探した結果から選べます。</p>
+        <label for="r-evacWater">大雨・洪水・土砂災害のとき</label>
+        <input id="r-evacWater" name="evacWater" type="text" list="evac-names-water" aria-describedby="r-evacWater-ex">
+        <p class="field-help example" id="r-evacWater-ex">例：〇〇中学校（3階以上）</p>
+        <datalist id="evac-names-water"></datalist>
+        <label for="r-evacQuake">地震・火事のとき</label>
+        <input id="r-evacQuake" name="evacQuake" type="text" list="evac-names-quake" aria-describedby="r-evacQuake-ex">
+        <p class="field-help example" id="r-evacQuake-ex">例：〇〇公園</p>
+        <datalist id="evac-names-quake"></datalist>
+        <label for="r-evacTsunami">津波のとき（海や大きな川の近くの家）</label>
+        <input id="r-evacTsunami" name="evacTsunami" type="text" list="evac-names-tsunami" aria-describedby="r-evacTsunami-ex">
+        <p class="field-help example" id="r-evacTsunami-ex">例：〇〇の高台</p>
+        <datalist id="evac-names-tsunami"></datalist>
+      </fieldset>
+
+      <fieldset>
+        <legend>連絡の方法</legend>
+        <label for="r-dengonNumber">171・web171で伝言に使う電話番号</label>
+        <p class="field-help">家族全員が同じ番号で伝言を残し、聞きます。固定電話がなければ、家族の誰かの携帯電話の番号で構いません。</p>
+        <input id="r-dengonNumber" name="dengonNumber" type="text" inputmode="tel" aria-describedby="r-dengonNumber-ex">
+        <p class="field-help example" id="r-dengonNumber-ex">例：026-000-0000（自宅）</p>
+        <label for="r-relay">連絡の中継をお願いする遠くの人（名前・電話）</label>
+        <p class="field-help">災害が起きた地域への電話はつながりにくくても、遠くへはつながりやすいことがあります。遠くの親戚などに、家族の無事の連絡を集めてもらいます。</p>
+        <input id="r-relay" name="relay" type="text" aria-describedby="r-relay-ex">
+        <p class="field-help example" id="r-relay-ex">例：東京のおば 〇〇さん 090-0000-0000</p>
+        <label for="r-contactOrder">連絡の順番</label>
+        <textarea id="r-contactOrder" name="contactOrder" rows="3"></textarea>
+        <p class="field-help">例：1. 家族のLINEグループ　2. 171　3. 遠くのおばに連絡</p>
+      </fieldset>
+
+      <fieldset data-show="solo" hidden>
+        <legend>離れて住む家族への連絡</legend>
+        <label for="r-familyContact">無事を知らせる相手と方法（実家・子ども・近所の人など）</label>
+        <input id="r-familyContact" name="familyContact" type="text" aria-describedby="r-familyContact-ex">
+        <p class="field-help example" id="r-familyContact-ex">例：母にLINE。つながらなければ171（実家の番号）</p>
+      </fieldset>
+
+      <fieldset>
+        <legend>いつ動くか（マイ・タイムライン）</legend>
+        <p class="field-help">大雨や台風は、前もって動き始められます。どの情報で、誰が、どこへ動くかを決めておきます。避難先は、避難所のほか、安全な親戚・知人の家やホテル（分散避難）でも構いません。</p>
+        <label for="r-startSignal">動き始める合図</label>
+        <input id="r-startSignal" name="startSignal" type="text" aria-describedby="r-startSignal-ex">
+        <p class="field-help example" id="r-startSignal-ex">例：レベル3が出たら、祖母を連れて出る</p>
+        <label for="r-startWho">誰が・誰と動くか</label>
+        <input id="r-startWho" name="startWho" type="text" aria-describedby="r-startWho-ex">
+        <p class="field-help example" id="r-startWho-ex">例：パパが祖母に付き添う</p>
+        <label for="r-startWhere">どこへ行くか</label>
+        <input id="r-startWhere" name="startWhere" type="text" aria-describedby="r-startWhere-ex">
+        <p class="field-help example" id="r-startWhere-ex">例：高台の〇〇町のおじの家</p>
+      </fieldset>
+
+      <fieldset>
+        <legend>家族の約束</legend>
+        <p class="field-help">津波や火事のときは、家族を迎えに戻らず、それぞれが自分で逃げると約束しておきましょう。</p>
+        <label for="r-meetTime">連絡がつかないときの待ち合わせ</label>
+        <input id="r-meetTime" name="meetTime" type="text" aria-describedby="r-meetTime-ex">
+        <p class="field-help example" id="r-meetTime-ex">例：毎日正午と夕方6時に、家の近くの集合場所へ</p>
+      </fieldset>
+
+      <fieldset>
+        <legend>昼間の居場所</legend>
+        <label for="r-daytime">学校・保育園・職場にいるときの決まり</label>
+        <textarea id="r-daytime" name="daytime" rows="3"></textarea>
+        <p class="field-help">例：長男は〇〇高校。震度5弱以上は学校で待機し、引き渡しは親のみ</p>
+        <label for="r-pickupBackup" data-show="kids" hidden>迎えに行けないときに頼む人（学校・保育園に届けてあるか）</label>
+        <input id="r-pickupBackup" name="pickupBackup" type="text" data-show="kids" hidden aria-describedby="r-pickupBackup-ex">
+        <p class="field-help example" id="r-pickupBackup-ex" data-show="kids" hidden>例：祖母（〇〇小に届け済み）</p>
+        <label for="r-contacts">かかりつけ医・学校・職場の連絡先</label>
+        <textarea id="r-contacts" name="contacts" rows="3"></textarea>
+      </fieldset>
+
+      <fieldset data-show="care" hidden>
+        <legend>介護のこと</legend>
+        <label for="r-careFacility">デイサービス・施設（名前・連絡先、施設にいるときの避難先と迎え方）</label>
+        <textarea id="r-careFacility" name="careFacility" rows="3"></textarea>
+        <label for="r-careManager">ケアマネジャーなどの連絡先</label>
+        <input id="r-careManager" name="careManager" type="text">
+        <label for="r-careSupport">手助けしてくれる人（2人以上）</label>
+        <input id="r-careSupport" name="careSupport" type="text" aria-describedby="r-careSupport-ex">
+        <p class="field-help example" id="r-careSupport-ex">例：となりの〇〇さん、民生委員の〇〇さん</p>
+        <label for="r-careRegistry">避難行動要支援者名簿・個別避難計画</label>
+        <input id="r-careRegistry" name="careRegistry" type="text" aria-describedby="r-careRegistry-ex">
+        <p class="field-help example" id="r-careRegistry-ex">例：名簿に登録済み。個別避難計画はケアマネと作成中</p>
+      </fieldset>
+
+      <fieldset data-show="med" hidden>
+        <legend>医療機器のこと</legend>
+        <label for="r-medPlan">停電のときの電源と、業者・主治医の連絡先</label>
+        <textarea id="r-medPlan" name="medPlan" rows="3"></textarea>
+        <label for="r-medBattery">予備のバッテリー・酸素ボンベが持つ時間</label>
+        <input id="r-medBattery" name="medBattery" type="text" aria-describedby="r-medBattery-ex">
+        <p class="field-help example" id="r-medBattery-ex">例：酸素ボンベ2本で約10時間。バッテリーは約6時間</p>
+        <label for="r-medDest">停電したときに行く先</label>
+        <input id="r-medDest" name="medDest" type="text" aria-describedby="r-medDest-ex">
+        <p class="field-help example" id="r-medDest-ex">例：〇〇病院（事前に相談済み）</p>
+      </fieldset>
+
+      <fieldset data-show="pet" hidden>
+        <legend>ペットのこと</legend>
+        <label for="r-petPlan">預け先の候補・避難の方法</label>
+        <input id="r-petPlan" name="petPlan" type="text" aria-describedby="r-petPlan-ex">
+        <p class="field-help example" id="r-petPlan-ex">例：ケージに入れて同行避難。預け先は〇〇のペットホテル</p>
+      </fieldset>
+
+      <fieldset data-hide="solo">
+        <legend>役割分担</legend>
+        <label for="r-rolePickup">子どもや家族の迎え（学校・保育園・デイサービスなど）</label>
+        <input id="r-rolePickup" name="rolePickup" type="text" aria-describedby="r-rolePickup-ex">
+        <p class="field-help example" id="r-rolePickup-ex">例：平日はママ、休日はパパ</p>
+        <label for="r-roleBag">持ち出し袋・ペット</label>
+        <input id="r-roleBag" name="roleBag" type="text" aria-describedby="r-roleBag-ex">
+        <p class="field-help example" id="r-roleBag-ex">例：持ち出し袋はパパ、犬はママ</p>
+        <label for="r-roleHome">家を出るときにすること</label>
+        <input id="r-roleHome" name="roleHome" type="text" aria-describedby="r-roleHome-ex">
+        <p class="field-help example" id="r-roleHome-ex">例：ブレーカーを落とす、ガスの元栓を閉める</p>
+        <label for="r-roleFarm">田畑・家畜・車・店など（見に行かない約束も）</label>
+        <input id="r-roleFarm" name="roleFarm" type="text" aria-describedby="r-roleFarm-ex">
+        <p class="field-help example" id="r-roleFarm-ex">例：大雨の日は田んぼを見に行かない。車は前の日に高台の〇〇へ。牛は〇〇さんと相談済み</p>
+      </fieldset>
+
+      <fieldset>
+        <legend>健康のこと</legend>
+        <p class="field-help">お薬手帳がなくても薬が分かるように、人ごとに書いておきます。例：名前「祖母」、薬「〇〇錠 5mg 朝1錠」、アレルギー「なし」</p>
+        <div id="people-list" class="people-list"></div>
+        <button type="button" id="person-add" class="btn small">＋ 人を追加</button>
+        <label for="r-health">そのほか（家族みんなのことなど）</label>
+        <textarea id="r-health" name="health" rows="3"></textarea>
+      </fieldset>
+
+      <fieldset>
+        <legend id="r-memo-legend">メモ</legend>
+        <textarea id="r-memo" name="memo" rows="3" aria-labelledby="r-memo-legend"></textarea>
+      </fieldset>
+    </form>
+    <p id="rules-saved" class="saved" aria-live="polite"></p>
+
+    <h3 class="sub-title">家族に送る・紙に残す</h3>
+    <label class="check-line"><input type="checkbox" id="share-health"> 健康・介護・医療機器のこととメモも、送る・印刷する内容に含める</label>
+    <p class="note">共有リンクには決め事の内容そのものが入ります。リンクを知っている人は誰でも読めるので、親戚の多いグループではなく、家族だけのトークに送ってください。決め事を変えたら、新しいリンクを送り直しましょう。</p>
+    <div class="row wrap-row">
+      <button type="button" id="share-link" class="btn primary" data-full-only>家族にリンクを送る</button>
+      <button type="button" id="copy-rules" class="btn">文章でコピーする</button>
+      <button type="button" id="print-rules" class="btn" data-full-only>印刷する</button>
+    </div>
+    <p id="notebook-link" class="notebook-link" hidden></p>
+    <p id="share-status" class="status" role="status"></p>
+    <div id="share-fallback" class="fallback" hidden>
+      <label for="share-fallback-text">自動でコピーできませんでした。下の文字を長押しして選び、コピーしてください。</label>
+      <textarea id="share-fallback-text" rows="4" readonly></textarea>
+    </div>
+    <p class="note">スマホの電池が切れても困らないよう、決め事は印刷して、財布や持ち出し袋にも入れておきましょう。</p>
+
+    <h3 class="sub-title">入力した内容を守る</h3>
+    <p class="note">入力した内容は、この端末のブラウザの中だけにあります。iPhoneでは、ホーム画面に追加していないと、しばらく開かないうちに消えることがあります。ときどきファイルに保存しておくと安心です。</p>
+    <div class="row wrap-row" data-full-only>
+      <button type="button" id="backup-save" class="btn">ファイルに保存する</button>
+      <label class="btn" for="backup-file">ファイルから戻す</label>
+      <input type="file" id="backup-file" accept="application/json,.json" class="sr-only">
+    </div>
+    <p id="backup-status" class="status" role="status"></p>
+    <details class="danger-zone">
+      <summary>この端末の入力をすべて消す</summary>
+      <div class="detail-body">
+        <p>決め事・家族の人数・備蓄・チェック・自宅の避難場所をすべて消します。元に戻せません。家族で共用している端末を手放すときなどに使います。</p>
+        <button type="button" id="clear-all" class="btn">すべて消す</button>
+      </div>
+    </details>
+  </section>
+
+  <!-- 備え -->
+  <section id="panel-stock" class="panel" role="tabpanel" aria-labelledby="tab-stock" hidden>
+    <nav class="jump" aria-label="このページの中の移動">
+      <button type="button" data-jump="sec-family">人数</button>
+      <button type="button" data-jump="sec-stock">備蓄</button>
+      <button type="button" data-jump="sec-bag">持ち出し袋</button>
+      <button type="button" data-jump="sec-pouch">ポーチ</button>
+      <button type="button" data-jump="sec-home">家の安全</button>
+    </nav>
+    <h2 class="section-title" id="sec-family">家族の人数と暮らし方</h2>
+    <p class="note">まず家族の人数を合わせてください。備蓄の目安や、家族に合わせた準備が出ます。</p>
+
+    <div class="solo-switch">
+      <label for="solo-select" class="field-label">暮らし方</label>
+      <select id="solo-select">
+        <option value="family">家族と暮らしている</option>
+        <option value="solo">一人暮らし</option>
+      </select>
+    </div>
+    <form id="family-form" class="family-grid" novalidate>
+      <label>大人（中学生〜64歳）<input name="adults" type="number" min="0" max="20" inputmode="numeric"></label>
+      <label>高齢者（65歳以上）<input name="elderly" type="number" min="0" max="20" inputmode="numeric"></label>
+      <label>子ども（1歳〜小学生）<input name="children" type="number" min="0" max="20" inputmode="numeric"></label>
+      <label>乳児（1歳未満）<input name="infants" type="number" min="0" max="20" inputmode="numeric"></label>
+      <label>犬<input name="dogs" type="number" min="0" max="20" inputmode="numeric"></label>
+      <label>猫<input name="cats" type="number" min="0" max="20" inputmode="numeric"></label>
+      <label>毎日薬を飲む人<input name="medsPeople" type="number" min="0" max="20" inputmode="numeric"></label>
+      <label>大人用おむつを使う人<input name="diaperAdults" type="number" min="0" max="20" inputmode="numeric"></label>
+      <label>介護が必要な人<input name="careNeeded" type="number" min="0" max="20" inputmode="numeric"></label>
+      <label>障害のある人<input name="disability" type="number" min="0" max="20" inputmode="numeric"></label>
+      <label>生理用品が必要な人<input name="sanitaryPeople" type="number" min="0" max="20" inputmode="numeric"></label>
+      <label>医療機器を使う人<input name="medDevice" type="number" min="0" max="20" inputmode="numeric"></label>
+      <label>備える日数
+        <select name="days">
+          <option value="3">3日分（最低限）</option>
+          <option value="7">7日分（できれば）</option>
+        </select>
+      </label>
+    </form>
+    <p id="family-total" class="note"></p>
+    <p class="fine">「薬を飲む人」から下は、大人・高齢者・子どもの人数とは別に、当てはまる人の数を入れてください（同じ人をいくつに数えても構いません）。</p>
+
+    <div id="care-guides"></div>
+
+    <div class="tip">
+      <strong>備えは3段階で</strong>
+      <ul>
+        <li><b>0次</b>：いつも持ち歩くポーチ（下のチェックリスト）</li>
+        <li><b>1次</b>：避難するときに持って出る、非常用持ち出し袋</li>
+        <li><b>2次</b>：家で過ごすための備蓄（この下の表）</li>
+      </ul>
+      <p>備蓄は、ふだん食べている物を少し多めに買い、使ったら買い足す「ローリングストック」が続けやすい方法です。期限の欄に入れておくと、近づいたときに知らせます。</p>
+    </div>
+
+    <h2 class="section-title" id="sec-stock">備蓄（2次の備え：家で過ごすための備え）</h2>
+    <p class="note">今ある量を入れると、足りないものが分かります。</p>
+    <div id="stock-summary" class="summary"></div>
+
+    <h3 class="sub-title">まず備えたいもの</h3>
+    <div class="table-box">
+      <table class="stock-table">
+        <thead><tr><th scope="col">品目</th><th scope="col">目安</th><th scope="col">今ある量</th><th scope="col">過不足</th><th scope="col">期限（年・月）</th></tr></thead>
+        <tbody id="stock-body-priority"></tbody>
+      </table>
+    </div>
+    <details class="more-stock">
+      <summary>そのほかの品目を見る</summary>
+      <div class="table-box">
+        <table class="stock-table">
+          <thead><tr><th scope="col">品目</th><th scope="col">目安</th><th scope="col">今ある量</th><th scope="col">過不足</th><th scope="col">期限（年・月）</th></tr></thead>
+          <tbody id="stock-body-other"></tbody>
+        </table>
+      </div>
+    </details>
+    <p id="stock-saved" class="saved" aria-live="polite"></p>
+    <div class="row wrap-row">
+      <button type="button" id="copy-shopping" class="btn primary">足りないものをコピーする</button>
+      <button type="button" id="ics-download" class="btn" data-full-only>期限と点検日をカレンダーに登録</button>
+    </div>
+    <p class="fine" data-full-only>カレンダーには、入れた期限の月の初めと、毎月1日の「防災の点検日」（171の体験日でもあります）、防災の日（9月1日）を登録します。</p>
+    <p id="stock-status" class="status" role="status"></p>
+    <div id="stock-fallback" class="fallback" hidden>
+      <label for="stock-fallback-text">自動でコピーできませんでした。下の文字を長押しして選び、コピーしてください。</label>
+      <textarea id="stock-fallback-text" rows="5" readonly></textarea>
+    </div>
+    <details class="sources">
+      <summary>目安の数字の根拠</summary>
+      <div class="detail-body">
+        <p>持病・食事制限・住んでいる地域（寒冷地など）に合わせて調整してください。</p>
+        <ul id="source-list"></ul>
+        <p class="fine" id="checked-on"></p>
+      </div>
+    </details>
+
+    <h2 class="section-title" id="sec-bag">非常用持ち出し袋（1次の備え）</h2>
+    <p class="note">避難するときに持って出る袋です。1人1袋、背負って歩ける重さに（目安は男性15kg・女性10kgまで）。入れたものにチェックを付けましょう。</p>
+    <p id="bag-progress" class="summary"></p>
+    <div id="bag-list" class="bag-grid"></div>
+
+    <h2 class="section-title" id="sec-pouch">いつも持ち歩くポーチ（0次の備え）</h2>
+    <p class="note">外出先で災害にあったときのために、かばんに入れておきます。</p>
+    <p id="pouch-progress" class="summary"></p>
+    <div id="pouch-list" class="bag-grid"></div>
+
+    <h2 class="section-title" id="sec-home">家の安全対策</h2>
+    <p class="note">けがをしない、火事を出さないための対策です。できたものにチェックを付けましょう。</p>
+    <p id="home-progress" class="summary"></p>
+    <div id="home-list" class="bag-grid"></div>
+  </section>
+<div id="print-card" class="print-card" aria-hidden="true"></div>
+<!--FAQ-->
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p><strong>ご利用にあたって</strong>：このツールは個人が作った非公式のもので、国や自治体とは関係ありません。情報の正確さや最新であることは保証できません。避難の判断は、市区町村の発表とハザードマップをもとに行ってください。このツールの利用で生じた損害について、運営者は責任を負いません。</p>
+    <p>避難場所：国土地理院「指定緊急避難場所データ」を加工して作成（データは市区町村が作成したもので、未登録や更新の遅れがあります）／地図：地理院タイル</p>
+    <p>内容の確認日：<span id="footer-checked-on"></span></p>
+    <p>入力した内容はこの端末の中だけに保存されます（住所で探すときの住所の文字を除く）。この画面の文章、自宅の周りの避難場所、決め事・備えの入力は、一度開いた端末なら電波がなくても見られます。</p>
+    <p id="affiliate-note" hidden>このサイトには、商品を紹介する広告（アフィリエイト）リンクを含むページがあります。</p>
+    <nav class="footer-links" aria-label="サイトの案内" data-full-only>
+      <a href="./">トップ</a><a href="bichiku/">防災備蓄の計算</a><a href="hinan/">災害の種類ごとの避難場所</a><a href="kimegoto/">家族の防災の決め事</a><a href="171/">災害用伝言ダイヤル171の使い方</a><a href="erabikata/">防災用品の選び方</a><a href="about/">運営者情報</a><a href="disclaimer/">免責事項</a><a href="privacy/">プライバシーポリシー</a>
+    </nav>
+  </div>
+</footer>
+
+<nav class="tabbar" aria-label="ページの切り替え">
+  <div class="tabbar-inner" role="tablist">
+    <button type="button" class="tab" id="tab-guide" role="tab" data-tab="guide" aria-controls="panel-guide" aria-selected="true">
+      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 L22 20 H2 Z"></path><path d="M12 10 V14"></path><path d="M12 17 V17.5"></path></svg>
+      <span>いざという時</span>
+    </button>
+    <button type="button" class="tab" id="tab-evac" role="tab" data-tab="evac" aria-controls="panel-evac" aria-selected="false" tabindex="-1">
+      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 21 C8 16 5 13 5 9.5 A7 7 0 0 1 19 9.5 C19 13 16 16 12 21 Z"></path><circle cx="12" cy="9.5" r="2.5"></circle></svg>
+      <span>避難場所</span>
+    </button>
+    <button type="button" class="tab" id="tab-rules" role="tab" data-tab="rules" aria-controls="panel-rules" aria-selected="false" tabindex="-1">
+      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="8" cy="8" r="3"></circle><circle cx="17" cy="9" r="2.5"></circle><path d="M2.5 20 C3 15.5 5.5 13.5 8 13.5 C10.5 13.5 13 15.5 13.5 20"></path><path d="M14 14.5 C15 13.8 16 13.5 17 13.5 C19.5 13.5 21.2 15.5 21.5 19"></path></svg>
+      <span>決め事</span>
+    </button>
+    <button type="button" class="tab" id="tab-stock" role="tab" data-tab="stock" aria-controls="panel-stock" aria-selected="false" tabindex="-1">
+      <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8 L12 3 L21 8 V17 L12 21 L3 17 Z"></path><path d="M3 8 L12 12.5 L21 8"></path><path d="M12 12.5 V21"></path></svg>
+      <span>備え</span>
+    </button>
+  </div>
+</nav>
+
+<script src="site-config.js"></script>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
