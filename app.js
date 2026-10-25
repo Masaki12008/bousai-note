@@ -16,6 +16,10 @@ const LEAFLET_CSS = `${ROOT}vendor/leaflet/leaflet.css`;
 const FONTS_CSS = 'https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&family=Zen+Maru+Gothic:wght@700&display=swap';
 const TILE_ZOOM = 10;
 const NEAREST_COUNT = 3;
+// これより遠い場所は「近くの避難場所」として出さない（内陸で海沿いの津波・高潮の避難場所が出ないように）
+const MAX_KM = 10;
+// 海の災害。近くにデータがないときは、内陸向けの説明を出す
+const COASTAL_TYPES = ['tsunami', 'stormSurge'];
 const EXPIRY_WARN_DAYS = 30;
 const SHARE_URL_LIMIT = 6000;
 const TABS = ['guide', 'evac', 'rules', 'stock'];
@@ -177,7 +181,7 @@ function normalizeEvac(v) {
     const r = v.results.find((x) => (x?.typeId ?? x?.type?.id) === type.id);
     const sites = (Array.isArray(r?.sites) ? r.sites : []).slice(0, NEAREST_COUNT)
       .map((x) => ({ name: String(x?.name ?? ''), address: String(x?.address ?? ''), lat: num(x?.lat), lon: num(x?.lon), km: num(x?.km) }))
-      .filter((x) => x.lat !== null && x.lon !== null && x.km !== null);
+      .filter((x) => x.lat !== null && x.lon !== null && x.km !== null && x.km <= MAX_KM);
     return { typeId: type.id, sites, failed: r?.failed === true };
   });
   return { origin, results, at: typeof v.at === 'string' ? v.at : '' };
@@ -543,7 +547,8 @@ async function fetchSites(layer, origin) {
     }
   }
   sites.sort((a, b) => a.km - b.km);
-  return { sites: sites.slice(0, NEAREST_COUNT), failed: !tiles.every((t) => t.ok) && sites.length === 0 };
+  const near = sites.filter((x) => x.km <= MAX_KM);
+  return { sites: near.slice(0, NEAREST_COUNT), failed: !tiles.every((t) => t.ok) && near.length === 0 };
 }
 
 function formatKm(km) {
@@ -602,9 +607,16 @@ function renderEvac(evac, { isHome }) {
       el('strong', { textContent: `読み込めなかった災害：${failed.map((r) => typeById(r.typeId).label).join('・')}` }),
       el('p', { textContent: '通信がうまくいかず、データを読み込めませんでした。電波のよい所でもう一度探すか、市区町村のハザードマップで確認してください。' })));
   }
-  if (empty.length) {
+  const coastal = empty.filter((r) => COASTAL_TYPES.includes(r.typeId));
+  const others = empty.filter((r) => !COASTAL_TYPES.includes(r.typeId));
+  if (coastal.length) {
     box.append(el('div', { className: 'tip evac-none' },
-      el('strong', { textContent: `近くにデータがなかった災害：${empty.map((r) => typeById(r.typeId).label).join('・')}` }),
+      el('strong', { textContent: `${coastal.map((r) => typeById(r.typeId).label).join('・')}：10km以内に避難場所の指定はありません` }),
+      el('p', { textContent: '海から離れた地域では、津波や高潮の心配はふつう小さいと考えられます。ただし、大きな川の河口に近い所や、海の近くへ出かけたときは注意してください。自宅の区域は、ハザードマップの「津波」「高潮」で確かめられます。' })));
+  }
+  if (others.length) {
+    box.append(el('div', { className: 'tip evac-none' },
+      el('strong', { textContent: `10km以内にデータがなかった災害：${others.map((r) => typeById(r.typeId).label).join('・')}` }),
       el('p', { textContent: 'データがないことは、安全な場所がないことや、その災害の危険がないことを意味しません。市区町村のハザードマップで確認してください。' })));
   }
 

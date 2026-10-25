@@ -236,13 +236,6 @@
   <!-- 避難場所 -->
   <section id="panel-evac" class="panel" role="tabpanel" aria-labelledby="tab-evac" hidden>
     <h2 class="section-title">災害の種類ごとの避難場所</h2>
-    <div class="caution caution-top">
-      <ul>
-        <li><strong>近い場所が安全とは限りません。</strong>川の向こう側や、浸水・土砂の危険がある道を通る場所もあります。避難場所と道順は、ハザードマップで確かめてください。</li>
-        <li><strong>指定されていても、開いているとは限りません。</strong>どこが開いているかは、市区町村の発表で確認してください。</li>
-      </ul>
-    </div>
-    <p class="note">ここに出るのは「指定緊急避難場所」（命を守るために、まず逃げる場所）です。家に戻れないときに過ごす「指定避難所」とは違う場合があります。災害の種類によって、使える場所が違います。指定避難所の場所は、市区町村のハザードマップや防災のページで確かめてください。</p>
 
     <div class="caution" data-preview-only hidden>
       <strong>この確認用ページでは、避難場所の検索は動きません</strong>
@@ -250,16 +243,9 @@
       <p><a href="https://disaportal.gsi.go.jp/" target="_blank" rel="noopener">ハザードマップポータルサイト</a></p>
     </div>
 
-    <div class="hazard-card">
-      <h3 class="sub-title">まず、自宅の危険を確かめる</h3>
-      <p class="note">ハザードマップで自宅の場所を見ながら答えてください。避難が必要か、家にとどまれるかの目安が分かります。</p>
-      <p><a class="btn small" href="https://disaportal.gsi.go.jp/" target="_blank" rel="noopener">ハザードマップポータルサイトを開く</a></p>
-      <form id="hazard-form" class="hazard-form" novalidate></form>
-      <div id="hazard-result" class="hazard-result" aria-live="polite"></div>
-    </div>
-
-    <h3 class="sub-title">近くの避難場所を探す</h3>
     <form id="addr-form" class="search-box" data-full-only novalidate>
+      <button type="button" id="use-geo" class="btn primary geo-btn">いる場所（現在地）で探す</button>
+      <p class="fine">現在地はこの検索にだけ使い、保存しません。自宅の周りの結果も消えません。</p>
       <label for="addr" class="field-label">自宅の住所で探す</label>
       <p class="field-help">番地までは要りません（町名までで探せます）。入れた文字は、位置を調べるために国土地理院のサービスに送られます。</p>
       <div class="row wrap-row">
@@ -267,11 +253,14 @@
         <button type="submit" class="btn primary">探す</button>
       </div>
       <p class="fine">住所で探した結果は「自宅の周り」としてこの端末に保存し、電波がないときも見られます。</p>
-      <div class="row wrap-row">
-        <button type="button" id="use-geo" class="btn">いる場所（現在地）で探す</button>
-      </div>
-      <p class="fine">現在地はこの検索にだけ使い、保存しません。自宅の周りの結果も消えません。</p>
     </form>
+
+    <div class="caution caution-top">
+      <ul>
+        <li><strong>近い場所が安全とは限りません。</strong>川の向こう側や、浸水・土砂の危険がある道を通る場所もあります。避難場所と道順は、ハザードマップで確かめてください。</li>
+        <li><strong>指定されていても、開いているとは限りません。</strong>どこが開いているかは、市区町村の発表で確認してください。</li>
+      </ul>
+    </div>
 
     <p id="evac-status" class="status" role="status"></p>
     <div id="evac-switch" class="row wrap-row" hidden>
@@ -279,6 +268,15 @@
     </div>
     <div id="map" class="map" hidden></div>
     <div id="evac-results"></div>
+    <p class="note">ここに出るのは、探した場所から10km以内の「指定緊急避難場所」（命を守るために、まず逃げる場所）です。家に戻れないときに過ごす「指定避難所」とは違う場合があります。災害の種類によって、使える場所が違います。指定避難所の場所は、市区町村のハザードマップや防災のページで確かめてください。</p>
+
+    <div class="hazard-card">
+      <h3 class="sub-title">自宅の危険を確かめる（ふだんの準備）</h3>
+      <p class="note">ハザードマップで自宅の場所を見ながら答えてください。避難が必要か、家にとどまれるかの目安が分かります。</p>
+      <p><a class="btn small" href="https://disaportal.gsi.go.jp/" target="_blank" rel="noopener">ハザードマップポータルサイトを開く</a></p>
+      <form id="hazard-form" class="hazard-form" novalidate></form>
+      <div id="hazard-result" class="hazard-result" aria-live="polite"></div>
+    </div>
   </section>
 
   <!-- 家族の決め事 -->

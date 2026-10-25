@@ -416,3 +416,5 @@ ruby.auto-ruby rt { font-size: 0.55em; font-weight: 400; }
   .site-footer { padding-bottom: 24px; }
   .jump { top: 56px; }
 }
+.geo-btn { align-self: flex-start; }
+#panel-evac .search-box { margin-top: 8px; }

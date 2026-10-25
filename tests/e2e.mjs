@@ -15,11 +15,13 @@ const route = async (ctx) => ctx.route('**/*', (r) => {
     if (gsiMode === 'down') return r.abort();
     const m = u.match(/skhb0(\d)/); const n = Number(m[1]);
     if (n === 5) return r.fulfill({ status: 404, body: '' });
-    return r.fulfill({ json: { features: [{ geometry: { type: 'Point', coordinates: [138.19 + n * 0.001, 36.662] }, properties: { name: `テスト施設${n}`, address: '住所' } }] } });
+    // 火山（8）だけは約100km先に置き、10kmより遠い場所を出さないことを確かめる
+    const lon = n === 8 ? 139.3 : 138.19 + n * 0.001;
+    return r.fulfill({ json: { features: [{ geometry: { type: 'Point', coordinates: [lon, 36.662] }, properties: { name: `テスト施設${n}`, address: '住所' } }] } });
   }
   return r.abort();
 });
-const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, permissions: ['clipboard-read', 'clipboard-write', 'geolocation'], geolocation: { latitude: 35.0, longitude: 135.0 } });
+const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, permissions: ['clipboard-read', 'clipboard-write', 'geolocation'], geolocation: { latitude: 36.66, longitude: 138.19 } });
 await route(ctx);
 const p = await ctx.newPage();
 const errors = []; p.on('pageerror', (e) => errors.push(e.message));
@@ -46,8 +48,10 @@ await p.fill('#addr', '長野市');
 await p.click('#addr-form button[type=submit]');
 await p.waitForFunction(() => document.querySelector('#evac-status').textContent.includes('テスト住所'));
 const cards = await p.$$eval('.evac-card h3', (h) => h.map((x) => x.textContent));
-ok(cards.length === 7 && !cards.includes('津波'), `データのある災害だけカードにする（${cards.length}枚）`);
-ok((await p.textContent('#evac-results')).includes('近くにデータがなかった災害：津波'), 'データがない災害を別にまとめる');
+ok(cards.length === 6 && !cards.includes('津波') && !cards.includes('火山の噴火'), `10km以内にデータのある災害だけカードにする（${cards.length}枚）`);
+const none = await p.textContent('#evac-results');
+ok(none.includes('津波：10km以内に避難場所の指定はありません') && none.includes('海から離れた地域'), '内陸で津波の避難場所がないときは、内陸向けの説明を出す');
+ok(none.includes('10km以内にデータがなかった災害：火山の噴火'), '10kmより遠い避難場所は出さない');
 ok(!(await p.content()).includes('google.com/maps/dir'), 'Googleの徒歩ルートへのリンクがない');
 // 避難先にする
 await p.click('.evac-card:has(h3:text-is("洪水")) button');
@@ -60,7 +64,7 @@ await p.check('.bag-item input >> nth=0');
 await p.reload();
 await p.click('#tab-evac');
 const names = await p.$$eval('.site-name', (n) => n.map((x) => x.textContent));
-ok(names.length === 7, `2回の再読み込み後も自宅の結果が残る（${names.length}件）`);
+ok(names.length === 6, `2回の再読み込み後も自宅の結果が残る（${names.length}件）`);
 
 // 通信失敗は「避難場所なし」と区別し、自宅の結果を上書きしない
 gsiMode = 'down';
@@ -69,7 +73,7 @@ await p.click('#addr-form button[type=submit]');
 await p.waitForFunction(() => document.querySelector('#evac-status').classList.contains('error'));
 ok((await p.textContent('#evac-status')).includes('読み込めませんでした'), '全部失敗したら「読み込めませんでした」');
 await p.reload(); await p.click('#tab-evac');
-ok((await p.$$('.site-name')).length === 7, '通信失敗のあとも自宅の結果は残る');
+ok((await p.$$('.site-name')).length === 6, '通信失敗のあとも自宅の結果は残る');
 gsiMode = 'ok';
 
 // 現在地で探しても自宅は上書きしない
@@ -181,7 +185,7 @@ await p.evaluate(() => navigator.serviceWorker.ready);
 await ctx.setOffline(true);
 await p.reload();
 await p.click('#tab-evac');
-ok((await p.$$('.site-name')).length === 7, '圏外でも自宅の周りの避難場所が見られる');
+ok((await p.$$('.site-name')).length === 6, '圏外でも自宅の周りの避難場所が見られる');
 await ctx.setOffline(false);
 
 // スクリーンショット
