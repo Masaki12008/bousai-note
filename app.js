@@ -713,14 +713,29 @@ async function renderMap(evac) {
   evacMap.fitBounds(points, { padding: [24, 24], maxZoom: 16 });
 }
 
-async function runEvacSearch(getOrigin, originErrorText, { isHome }) {
+// 押したボタンを「探しています…」にし、終わったら結果の案内まで画面を動かす（案内が画面の外に出ないように）
+async function runEvacSearch(getOrigin, originErrorText, { isHome, button }) {
+  const label = button.textContent;
+  button.disabled = true;
+  button.textContent = '探しています…';
+  try {
+    await searchEvac(getOrigin, originErrorText, { isHome });
+  } finally {
+    button.disabled = false;
+    button.textContent = label;
+    const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+    $('#evac-status').scrollIntoView({ block: 'start', behavior: reduce ? 'auto' : 'smooth' });
+  }
+}
+
+async function searchEvac(getOrigin, originErrorText, { isHome }) {
   const status = $('#evac-status');
   setStatus(status, '探しています…');
   let origin;
   try {
     origin = await getOrigin();
   } catch (e) {
-    setStatus(status, originErrorText, true);
+    setStatus(status, typeof originErrorText === 'function' ? originErrorText(e) : originErrorText, true);
     return;
   }
   if (!origin) {
@@ -753,6 +768,17 @@ async function runEvacSearch(getOrigin, originErrorText, { isHome }) {
   setStatus(status, isHome
     ? `「${origin.label}」の周りの避難場所です（自宅の周りとして保存しました）。住所が合っているか確かめてください。`
     : 'いる場所（現在地）の周りの避難場所です。この結果は保存していません。');
+}
+
+// 位置情報が使えなかった理由ごとに、次にすることを案内する
+function geoErrorText(e) {
+  if (e?.code === 1) {
+    return IS_APPLE
+      ? '位置情報の利用が許可されていません。iPhoneは「設定」→「プライバシーとセキュリティ」→「位置情報サービス」をオンにし、その中の「Safari Webサイト」を「使用中のみ」にしてから、もう一度押してください。住所で探すこともできます。'
+      : '位置情報の利用が許可されていません。ブラウザのアドレス欄の横のマークから位置情報を「許可」にして、もう一度押してください。住所で探すこともできます。';
+  }
+  if (e?.code === 3) return '現在地が分かるまでに時間がかかりすぎました。空の見える場所でもう一度押すか、住所で探してください。';
+  return '現在地が分かりませんでした。位置情報をオンにしてもう一度押すか、住所で探してください。';
 }
 
 function currentPosition() {
@@ -1634,10 +1660,10 @@ function init() {
       $('#addr').focus();
       return;
     }
-    runEvacSearch(() => geocode(address), '住所を調べられませんでした。電波のよい所でもう一度お試しください。', { isHome: true });
+    runEvacSearch(() => geocode(address), '住所を調べられませんでした。電波のよい所でもう一度お試しください。', { isHome: true, button: $('#addr-form button[type=submit]') });
   });
   $('#use-geo').addEventListener('click', () => {
-    runEvacSearch(currentPosition, '現在地が分かりませんでした。位置情報の利用を許可するか、住所で探してください。', { isHome: false });
+    runEvacSearch(currentPosition, geoErrorText, { isHome: false, button: $('#use-geo') });
   });
   $('#show-home').addEventListener('click', showHomeEvac);
 

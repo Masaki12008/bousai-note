@@ -80,6 +80,18 @@ await p.check('input[name=hz-floors][value="2"]');
 await p.check('input[name=hz-duration][value=long]');
 ok((await p.textContent('#hazard-result')).includes('3日以上'), '浸水が続く時間で目安を変える');
 
+// 位置情報が許可されていないときは、理由と直し方を出す
+{
+  const ctxN = await b.newContext({ viewport: { width: 390, height: 844 }, permissions: [] });
+  await ctxN.route('**/*', (r) => (r.request().url().startsWith('http://localhost') ? r.continue() : r.abort()));
+  const pN = await ctxN.newPage();
+  await pN.goto(BASE + '#evac');
+  await pN.click('#use-geo');
+  await pN.waitForFunction(() => document.querySelector('#evac-status').classList.contains('error'));
+  ok((await pN.textContent('#evac-status')).includes('許可'), '位置情報が許可されていないときは、許可の仕方を案内する');
+  await ctxN.close();
+}
+
 // 一人暮らし
 await p.click('#tab-stock');
 await p.selectOption('#solo-select', 'solo');

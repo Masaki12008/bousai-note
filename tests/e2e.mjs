@@ -82,6 +82,9 @@ gsiMode = 'ok';
 // 現在地で探しても自宅は上書きしない
 await p.click('#use-geo');
 await p.waitForFunction(() => document.querySelector('#evac-status').textContent.includes('現在地'));
+await p.waitForTimeout(800);
+ok(await p.$eval('#evac-status', (n) => { const r = n.getBoundingClientRect(); return r.top >= 0 && r.bottom <= innerHeight; }), '現在地で探したら、結果の案内が画面に見える');
+ok((await p.textContent('#use-geo')) === 'いる場所（現在地）で探す' && !(await p.$eval('#use-geo', (b) => b.disabled)), '探し終わったらボタンを元に戻す');
 ok(await p.isVisible('#show-home'), '現在地の結果のとき「自宅の周りに戻す」が出る');
 await p.reload(); await p.click('#tab-evac');
 ok((await p.textContent('#evac-status')).includes('テスト住所'), '現在地で探しても、保存は自宅の結果のまま');
