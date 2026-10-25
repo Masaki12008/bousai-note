@@ -92,6 +92,19 @@ ok((await p.textContent('#hazard-result')).includes('3日以上'), '浸水が続
   await ctxN.close();
 }
 
+// 以前の「大雨・洪水・土砂災害」の1つの欄は、洪水と土砂災害の両方に引き継ぐ
+{
+  const ctxM = await b.newContext({ viewport: { width: 390, height: 844 } });
+  await ctxM.route('**/*', (r) => (r.request().url().startsWith('http://localhost') ? r.continue() : r.abort()));
+  const pM = await ctxM.newPage();
+  await pM.goto(BASE);
+  await pM.evaluate(() => localStorage.setItem('ienokoto-bousai-v1', JSON.stringify({ v: 2, rules: { evacWater: '〇〇中学校' } })));
+  await pM.reload();
+  await pM.click('#tab-rules');
+  ok((await pM.inputValue('#r-evacWater')) === '〇〇中学校' && (await pM.inputValue('#r-evacLandslide')) === '〇〇中学校', '以前の水害・土砂の避難先を、洪水と土砂災害の両方に引き継ぐ');
+  await ctxM.close();
+}
+
 // 一人暮らし
 await p.click('#tab-stock');
 await p.selectOption('#solo-select', 'solo');

@@ -59,6 +59,11 @@ ok(!(await p.content()).includes('google.com/maps/dir'), 'Googleの徒歩ルー�
 // 避難先にする
 await p.click('.evac-card:has(h3:text-is("洪水")) button');
 ok((await p.textContent('#evac-status')).includes('避難先として決め事に書きました'), '「避難先にする」で決め事に書く');
+await p.click('.evac-card:has(h3:text-is("土砂災害")) button');
+const pickLabels = await p.$$eval('.evac-card button', (l) => [...new Set(l.map((b) => b.textContent))]);
+ok(pickLabels.includes('洪水の避難先にする') && pickLabels.includes('土砂災害の避難先にする') && pickLabels.includes('津波・高潮の避難先にする') && !pickLabels.some((t) => t.includes('水害')), `洪水と土砂災害は別々の避難先に（${pickLabels.join('／')}）`);
+const picked = await p.evaluate(() => JSON.parse(localStorage.getItem('ienokoto-bousai-v1')).rules);
+ok(picked.evacWater === 'テスト施設1' && picked.evacLandslide === 'テスト施設2', '洪水と土砂災害の避難先をそれぞれ決め事に書く');
 
 // 再読み込み2回＋保存の操作を挟んでも自宅の結果が消えない（以前のバグ）
 await p.reload();

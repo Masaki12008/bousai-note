@@ -295,15 +295,19 @@
       <fieldset>
         <legend>災害の種類ごとの避難先</legend>
         <p class="field-help">災害の種類によって、安全な避難先は違います。「避難場所」のページで探した結果から選べます。</p>
-        <label for="r-evacWater">大雨・洪水・土砂災害のとき</label>
+        <label for="r-evacWater">洪水のとき（大雨で川や水路があふれる）</label>
         <input id="r-evacWater" name="evacWater" type="text" list="evac-names-water" aria-describedby="r-evacWater-ex">
         <p class="field-help example" id="r-evacWater-ex">例：〇〇中学校（3階以上）</p>
+        <label for="r-evacLandslide">土砂災害のとき（がけ崩れ・土石流）</label>
+        <input id="r-evacLandslide" name="evacLandslide" type="text" list="evac-names-landslide" aria-describedby="r-evacLandslide-ex">
+        <p class="field-help example" id="r-evacLandslide-ex">例：がけから離れた〇〇公民館</p>
+        <datalist id="evac-names-landslide"></datalist>
         <datalist id="evac-names-water"></datalist>
-        <label for="r-evacQuake">地震・火事のとき</label>
+        <label for="r-evacQuake">地震・大規模な火事のとき</label>
         <input id="r-evacQuake" name="evacQuake" type="text" list="evac-names-quake" aria-describedby="r-evacQuake-ex">
         <p class="field-help example" id="r-evacQuake-ex">例：〇〇公園</p>
         <datalist id="evac-names-quake"></datalist>
-        <label for="r-evacTsunami">津波のとき（海や大きな川の近くの家）</label>
+        <label for="r-evacTsunami">津波・高潮のとき（海や大きな川の河口の近くの家）</label>
         <input id="r-evacTsunami" name="evacTsunami" type="text" list="evac-names-tsunami" aria-describedby="r-evacTsunami-ex">
         <p class="field-help example" id="r-evacTsunami-ex">例：〇〇の高台</p>
         <datalist id="evac-names-tsunami"></datalist>

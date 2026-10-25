@@ -29,7 +29,7 @@ const DEFAULT_FAMILY = {
   adults: 2, elderly: 0, children: 0, infants: 0, dogs: 0, cats: 0,
   medsPeople: 0, diaperAdults: 0, careNeeded: 0, disability: 0, sanitaryPeople: 0, medDevice: 0, days: 7,
 };
-const RULE_FIELDS = ['meet1', 'evacWater', 'evacQuake', 'evacTsunami', 'familyContact', 'startSignal', 'startWho', 'startWhere',
+const RULE_FIELDS = ['meet1', 'evacWater', 'evacLandslide', 'evacQuake', 'evacTsunami', 'familyContact', 'startSignal', 'startWho', 'startWhere',
   'meetTime', 'daytime', 'pickupBackup', 'contacts', 'dengonNumber', 'relay', 'contactOrder', 'careFacility', 'careManager', 'careSupport',
   'careRegistry', 'medPlan', 'medBattery', 'medDest', 'petPlan', 'rolePickup', 'roleBag', 'roleHome', 'roleFarm', 'health', 'memo'];
 // 健康のことは人ごとに書く（お薬手帳がなくても薬が分かるように）
@@ -39,9 +39,10 @@ const PRIVATE_RULE_FIELDS = ['health', 'careRegistry', 'medPlan', 'medBattery', 
 
 const RULE_LABELS = {
   meet1: '家の近くの集合場所',
-  evacWater: '避難先（大雨・洪水・土砂）',
+  evacWater: '避難先（洪水）',
+  evacLandslide: '避難先（土砂災害）',
   evacQuake: '避難先（地震・火事）',
-  evacTsunami: '避難先（津波）',
+  evacTsunami: '避難先（津波・高潮）',
   familyContact: '離れて住む家族への連絡',
   startSignal: '動き始める合図',
   startWho: '誰が・誰と動くか',
@@ -69,7 +70,7 @@ const RULE_LABELS = {
   memo: 'メモ',
 };
 // 「いざという時」に出す項目。QUICK_TOP はいつも見せ、残りは「すべて見る」で開く
-const QUICK_TOP = ['meet1', 'evacWater', 'evacQuake', 'evacTsunami', 'dengonNumber'];
+const QUICK_TOP = ['meet1', 'evacWater', 'evacLandslide', 'evacQuake', 'evacTsunami', 'dengonNumber'];
 const QUICK_FIELDS = [...QUICK_TOP, 'startSignal', 'meetTime', 'relay',
   'familyContact', 'rolePickup', 'pickupBackup', 'careFacility', 'medPlan', 'medBattery', 'medDest', 'health'];
 
@@ -114,6 +115,8 @@ function normalizeFamily(src) {
 function normalizeRules(src) {
   const rules = {};
   for (const key of RULE_FIELDS) rules[key] = typeof src?.[key] === 'string' ? src[key].slice(0, 2000) : '';
+  // 以前は「大雨・洪水・土砂災害」で1つの欄だった。土砂災害の欄がない古い保存・共有リンクは、同じ避難先を引き継ぐ
+  if (typeof src?.evacLandslide !== 'string' && rules.evacWater) rules.evacLandslide = rules.evacWater;
   return rules;
 }
 
@@ -453,7 +456,7 @@ function renderActionPanel() {
 
 function renderProgress() {
   const hasHome = !!state.homeEvac;
-  const hasRules = ['meet1', 'evacWater', 'evacQuake', 'dengonNumber'].some((k) => state.rules[k].trim());
+  const hasRules = ['meet1', 'evacWater', 'evacLandslide', 'evacQuake', 'dengonNumber'].some((k) => state.rules[k].trim());
   const entered = STOCK_RULES.filter((item) => item.need(state.family) > 0 && state.stock[item.id].have !== null).length;
   const bagItems = bagItemsFor(state.family);
   const bagDone = bagItems.filter((item) => state.bag[item.id]).length;
@@ -1372,7 +1375,7 @@ function renderHazardResult() {
   const ul = el('ul', {}, ...lines.map(([k, t]) => el('li', {}, el('strong', { textContent: `${k}：` }), t)));
   box.append(el('h4', { textContent: 'わが家の避難の目安' }), ul);
   if (h.flood === 'no' && h.landslide === 'no' && h.tsunami === 'no') {
-    box.append(el('p', { textContent: '水害・土砂・津波の区域の外です。地震で家が無事なら、家で過ごす「在宅避難」が基本です。在宅避難でも、避難所で食料や情報を受け取れます。' }));
+    box.append(el('p', { textContent: '洪水・土砂災害・津波の区域の外です。地震で家が無事なら、家で過ごす「在宅避難」が基本です。在宅避難でも、避難所で食料や情報を受け取れます。' }));
   }
   if (h.flood === 'yes' && !h.duration) box.append(el('p', { textContent: '水が引くまでの時間（浸水継続時間）もハザードマップで確かめ、その日数分の水・食料・トイレを備えます。' }));
   if (Object.values(h).includes('unknown')) box.append(el('p', { textContent: '「分からない」の項目は、ハザードマップで確かめましょう。' }));
@@ -1459,7 +1462,7 @@ function buildPrintCard() {
   const dengon = rules.dengonNumber.trim();
   const wallet = el('div', { className: 'pc-wallet' },
     el('p', { className: 'pc-wallet-title', textContent: 'わが家の防災カード（切り取って財布に）' }),
-    ...['meet1', 'evacWater', 'evacQuake', 'evacTsunami', 'relay'].filter((k) => rules[k].trim())
+    ...['meet1', 'evacWater', 'evacLandslide', 'evacQuake', 'evacTsunami', 'relay'].filter((k) => rules[k].trim())
       .map((k) => el('p', {}, el('b', { textContent: `${RULE_LABELS[k]}：` }), rules[k].trim())),
     el('p', {}, el('b', { textContent: '171：' }), dengon ? `残す 171→1→${dengon}／聞く 171→2→${dengon}` : '残す 171→1→番号／聞く 171→2→番号'));
   $('#print-card').replaceChildren(

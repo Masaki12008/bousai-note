@@ -6,23 +6,24 @@ const CONTENT_CHECKED_ON = '2026年10月24日（制度・リンク・数値は�
 
 // 国土地理院「指定緊急避難場所データ」のタイル（ズーム10のGeoJSON）。
 // レイヤー名と災害種別の対応は、公開前に国土地理院の提供ページで要確認。
-// group は「家族の決め事」で避難先を書く欄（水害・土砂／地震・火事／津波）との対応。
+// group は「家族の決め事」で避難先を書く欄（洪水／土砂災害／地震・火事／津波・高潮）との対応。
 const DISASTER_TYPES = [
   { id: 'flood', layer: 'skhb01', label: '洪水', desc: '川の水があふれる', group: 'water' },
-  { id: 'landslide', layer: 'skhb02', label: '土砂災害', desc: 'がけ崩れ・土石流・地すべり', group: 'water' },
-  { id: 'stormSurge', layer: 'skhb03', label: '高潮', desc: '台風などで海面が上がり、海水があふれる', group: 'water' },
+  { id: 'landslide', layer: 'skhb02', label: '土砂災害', desc: 'がけ崩れ・土石流・地すべり', group: 'landslide' },
+  { id: 'stormSurge', layer: 'skhb03', label: '高潮', desc: '台風などで海面が上がり、海水があふれる', group: 'tsunami' },
   { id: 'earthquake', layer: 'skhb04', label: '地震', desc: '', group: 'quake' },
   { id: 'tsunami', layer: 'skhb05', label: '津波', desc: '', group: 'tsunami' },
   { id: 'fire', layer: 'skhb06', label: '大規模な火事', desc: '地震などで火事が燃え広がる', group: 'quake' },
-  { id: 'inlandFlood', layer: 'skhb07', label: '内水氾濫', desc: '大雨で下水や水路があふれ、街が水につかる', group: 'water' },
+  { id: 'inlandFlood', layer: 'skhb07', label: '内水氾濫', desc: '大雨で下水や水路があふれ、街が水につかる（洪水の一つ）', group: 'water' },
   { id: 'volcano', layer: 'skhb08', label: '火山の噴火', desc: '噴石・火砕流など', group: null },
 ];
 
 // 決め事の「災害ごとの避難先」の欄
 const EVAC_GROUPS = [
-  { id: 'water', field: 'evacWater', label: '大雨・洪水・土砂災害のとき', short: '水害・土砂' },
-  { id: 'quake', field: 'evacQuake', label: '地震・火事のとき', short: '地震・火事' },
-  { id: 'tsunami', field: 'evacTsunami', label: '津波のとき（海や大きな川の近くの家）', short: '津波' },
+  { id: 'water', field: 'evacWater', label: '洪水のとき（大雨で川や水路があふれる）', short: '洪水' },
+  { id: 'landslide', field: 'evacLandslide', label: '土砂災害のとき（がけ崩れ・土石流）', short: '土砂災害' },
+  { id: 'quake', field: 'evacQuake', label: '地震・大規模な火事のとき', short: '地震・火事' },
+  { id: 'tsunami', field: 'evacTsunami', label: '津波・高潮のとき（海や大きな川の河口の近くの家）', short: '津波・高潮' },
 ];
 
 // 「いま起きている災害は？」のボタンと、すぐにやること。
@@ -78,7 +79,7 @@ const ACTIONS = [
     ],
   },
   {
-    id: 'landslide', label: '土砂災害', group: 'water',
+    id: 'landslide', label: '土砂災害', group: 'landslide',
     now: [
       '前ぶれがなくても起きる。土砂災害警戒区域の家は、警戒レベル4（避難指示・レベル4土砂災害危険警報・キキクルの紫）で必ず区域の外へ避難する。',
       'がけから小石が落ちる、湧き水がにごる・急に減る、地鳴り、木の裂ける音などに気づいたら、一刻も早く離れる。',
