@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>わが家の防災ノート</title>
 <!--SEO_HEAD-->
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://cyberjapandata.gsi.go.jp; connect-src 'self' https://msearch.gsi.go.jp https://cyberjapandata.gsi.go.jp; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: https://cyberjapandata.gsi.go.jp; connect-src 'self' https://msearch.gsi.go.jp https://cyberjapandata.gsi.go.jp https://disaportaldata.gsi.go.jp; manifest-src 'self'; worker-src 'self'; base-uri 'self'; form-action 'none'">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="style.css">
 <link rel="manifest" href="manifest.json">
@@ -273,6 +273,11 @@
     <div class="hazard-card">
       <h3 class="sub-title">自宅の危険を確かめる（ふだんの準備）</h3>
       <p class="note">ハザードマップで自宅の場所を見ながら答えてください。避難が必要か、家にとどまれるかの目安が分かります。</p>
+      <div class="auto-hazard" data-full-only>
+        <button type="button" id="auto-hazard" class="btn primary">住所から自動で調べる（試験中）</button>
+        <p class="fine">上の「自宅の住所で探す」で探した住所の地点を、ハザードマップポータルサイトの地図データで調べ、「入っている」と分かった項目を選びます。見つからなかった項目は空けたままにします。地点の位置だけを国土地理院のサービスに送ります。</p>
+        <div id="auto-hazard-result" class="auto-hazard-result" aria-live="polite"></div>
+      </div>
       <p><a class="btn small" href="https://disaportal.gsi.go.jp/" target="_blank" rel="noopener">ハザードマップポータルサイトを開く</a></p>
       <form id="hazard-form" class="hazard-form" novalidate></form>
       <div id="hazard-result" class="hazard-result" aria-live="polite"></div>
@@ -583,6 +588,7 @@
 <footer class="site-footer">
   <div class="wrap">
     <p><strong>ご利用にあたって</strong>：このツールは個人が作った非公式のもので、国や自治体とは関係ありません。情報の正確さや最新であることは保証できません。避難の判断は、市区町村の発表とハザードマップをもとに行ってください。このツールの利用で生じた損害について、運営者は責任を負いません。</p>
+    <p>自宅の危険の自動の確認：ハザードマップポータルサイト（国土交通省）のオープンデータを利用</p>
     <p>避難場所：国土地理院「指定緊急避難場所データ」を加工して作成（データは市区町村が作成したもので、未登録や更新の遅れがあります）／地図：地理院タイル</p>
     <p>内容の確認日：<span id="footer-checked-on"></span></p>
     <p>入力した内容はこの端末の中だけに保存されます（住所で探すときの住所の文字を除く）。この画面の文章、自宅の周りの避難場所、決め事・備えの入力は、一度開いた端末なら電波がなくても見られます。</p>

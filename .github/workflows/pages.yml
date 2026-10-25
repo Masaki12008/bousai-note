@@ -33,6 +33,7 @@ jobs:
           node tests/e2e.mjs
           node tests/e2e-phase2.mjs
           node tests/e2e-site.mjs
+          node tests/e2e-hazard.mjs
   deploy:
     needs: test
     runs-on: ubuntu-latest

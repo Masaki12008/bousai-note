@@ -18,6 +18,28 @@ const DISASTER_TYPES = [
   { id: 'volcano', layer: 'skhb08', label: '火山の噴火', desc: '噴石・火砕流など', group: null },
 ];
 
+// 自宅の危険を自動で調べるための、ハザードマップポータルサイトのオープンデータ（地図画像のタイル）。
+// 層の名前と凡例の色は公開前に「オープンデータ配信」のページと照合すること。
+// 読み取れたのに凡例と合わない色は「深さ不明」として扱う。見つからなかった項目は「入っていない」にしない（URLの誤りで安全側に倒れないように）。
+const HAZARD_TILE_BASE = 'https://disaportaldata.gsi.go.jp/raster/';
+const HAZARD_TILE_ZOOM = 17;
+const HAZARD_LAYERS = [
+  { id: 'flood', label: '洪水（想定最大規模）', layers: ['01_flood_l2_shinsuishin_data'] },
+  { id: 'collapse', label: '家屋倒壊等氾濫想定区域', layers: ['01_flood_l2_kaokutoukai_hanran_data', '01_flood_l2_kaokutoukai_kagan_data'] },
+  { id: 'landslide', label: '土砂災害警戒区域', layers: ['05_dosekiryukeikaikuiki', '05_kyukeishakeikaikuiki', '05_jisuberikeikaikuiki'] },
+  { id: 'tsunami', label: '津波（浸水想定）', layers: ['04_tsunami_newlegend_data'] },
+  { id: 'stormSurge', label: '高潮（浸水想定）', layers: ['03_hightide_l2_shinsuishin_data'] },
+];
+// 浸水の深さの凡例（国土交通省の手引きの色）と、質問の選択肢との対応
+const DEPTH_COLORS = [
+  { rgb: [247, 245, 169], depth: 'lt05', text: '0.5m未満' },
+  { rgb: [255, 216, 192], depth: '05to3', text: '0.5〜3m' },
+  { rgb: [255, 183, 183], depth: '3to5', text: '3〜5m' },
+  { rgb: [255, 145, 145], depth: 'gt5', text: '5〜10m' },
+  { rgb: [242, 133, 201], depth: 'gt5', text: '10〜20m' },
+  { rgb: [220, 122, 220], depth: 'gt5', text: '20m以上' },
+];
+
 // 決め事の「災害ごとの避難先」の欄
 const EVAC_GROUPS = [
   { id: 'water', field: 'evacWater', label: '洪水のとき（大雨で川や水路があふれる）', short: '洪水' },

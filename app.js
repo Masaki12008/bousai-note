@@ -1382,6 +1382,117 @@ function renderHazardResult() {
   box.append(el('p', { className: 'fine', textContent: 'ハザードマップの想定にもとづく目安です。実際の避難は、市区町村の情報に従ってください。想定を超える災害もあります。' }));
 }
 
+// ---------- 自宅の危険を自動で調べる（試験中） ----------
+
+// その地点の、地図画像の3×3の点の色を読む。タイルがない（404）ときは「データなし」
+async function samplePixels(layer, lat, lon) {
+  const n = 2 ** HAZARD_TILE_ZOOM;
+  const px = ((lon + 180) / 360) * n * 256;
+  const rad = (lat * Math.PI) / 180;
+  const py = ((1 - Math.log(Math.tan(rad) + 1 / Math.cos(rad)) / Math.PI) / 2) * n * 256;
+  const tx = Math.floor(px / 256);
+  const ty = Math.floor(py / 256);
+  const res = await fetch(`${HAZARD_TILE_BASE}${layer}/${HAZARD_TILE_ZOOM}/${tx}/${ty}.png`);
+  if (res.status === 404) return { status: 'none', colors: [] };
+  if (!res.ok) throw new Error('tile');
+  const bitmap = await createImageBitmap(await res.blob());
+  const canvas = el('canvas', { width: 256, height: 256 });
+  const ctx = canvas.getContext('2d', { willReadFrequently: true });
+  ctx.drawImage(bitmap, 0, 0);
+  const cx = Math.min(254, Math.max(1, Math.floor(px - tx * 256)));
+  const cy = Math.min(254, Math.max(1, Math.floor(py - ty * 256)));
+  const data = ctx.getImageData(cx - 1, cy - 1, 3, 3).data;
+  const colors = [];
+  for (let i = 0; i < data.length; i += 4) if (data[i + 3] > 40) colors.push([data[i], data[i + 1], data[i + 2]]);
+  return { status: 'ok', colors };
+}
+
+function depthOf(colors) {
+  const order = ['lt05', '05to3', '3to5', 'gt5'];
+  let best = null;
+  for (const c of colors) {
+    const hit = DEPTH_COLORS
+      .map((d) => ({ d, dist: Math.hypot(d.rgb[0] - c[0], d.rgb[1] - c[1], d.rgb[2] - c[2]) }))
+      .sort((a, b) => a.dist - b.dist)[0];
+    if (hit.dist > 40) continue;
+    // 3×3の中で一番深いものを取る（境目では安全側に）
+    if (!best || order.indexOf(hit.d.depth) > order.indexOf(best.depth) || (hit.d.depth === best.depth && DEPTH_COLORS.indexOf(hit.d) > DEPTH_COLORS.indexOf(best))) best = hit.d;
+  }
+  return best;
+}
+
+async function checkHazardAt(lat, lon) {
+  const out = {};
+  for (const h of HAZARD_LAYERS) {
+    const results = await Promise.all(h.layers.map((layer) => samplePixels(layer, lat, lon).catch(() => ({ status: 'fail', colors: [] }))));
+    const colors = results.flatMap((r) => r.colors);
+    out[h.id] = {
+      found: colors.length > 0,
+      failed: results.every((r) => r.status === 'fail'),
+      colors,
+      layers: h.layers.map((layer, i) => `${layer}：${{ ok: '読めた', none: 'データなし', fail: '読めなかった' }[results[i].status]}${results[i].colors.length ? '（色あり）' : ''}`),
+    };
+  }
+  return out;
+}
+
+async function runAutoHazard() {
+  const box = $('#auto-hazard-result');
+  const btn = $('#auto-hazard');
+  let origin = state.homeEvac?.origin;
+  const address = $('#addr').value.trim();
+  btn.disabled = true;
+  btn.textContent = '調べています…';
+  box.replaceChildren(el('p', { textContent: '調べています…' }));
+  try {
+    if (address) origin = await geocode(address).catch(() => null) ?? origin;
+    if (!origin) {
+      box.replaceChildren(el('p', { className: 'status error', textContent: 'この画面の上の「自宅の住所で探す」に住所を入れてから押してください。' }));
+      return;
+    }
+    const r = await checkHazardAt(origin.lat, origin.lon);
+    if (Object.values(r).every((x) => x.failed)) {
+      box.replaceChildren(el('p', { className: 'status error', textContent: '地図データを読み込めませんでした。電波のよい所でもう一度押すか、ハザードマップを見ながら選んでください。' }));
+      return;
+    }
+    const lines = [];
+    const h = state.hazard;
+    const line = (label, x, foundText) => lines.push(`${label}：${x.failed ? '調べられませんでした' : x.found ? foundText : '見つかりませんでした（ハザードマップでも確かめてください）'}`);
+    const depth = depthOf(r.flood.colors);
+    if (r.flood.found) {
+      h.flood = 'yes';
+      if (depth) h.depth = depth.depth;
+    }
+    line('洪水', r.flood, `浸水する区域です${depth ? `（想定の深さ ${depth.text}）` : '（深さはハザードマップで確かめてください）'}`);
+    if (r.collapse.found) h.collapse = 'yes';
+    line('家屋倒壊等氾濫想定区域', r.collapse, '入っています');
+    const red = r.landslide.colors.some(([cr, cg, cb]) => cr > 180 && cg < 110 && cb < 110);
+    if (r.landslide.found) {
+      h.landslide = 'yes';
+      if (red) h.landslideRed = 'yes';
+    }
+    line('土砂災害警戒区域', r.landslide, red ? '入っています（特別警戒区域＝レッドゾーンの色もあります）' : '入っています');
+    const tsunamiDepth = depthOf(r.tsunami.colors);
+    if (r.tsunami.found) h.tsunami = 'yes';
+    line('津波', r.tsunami, `浸水する区域です${tsunamiDepth ? `（想定の深さ ${tsunamiDepth.text}）` : ''}`);
+    line('高潮', r.stormSurge, '浸水する区域です（ハザードマップの高潮でも確かめてください）');
+    saveState();
+    renderHazardForm();
+    renderProgress();
+    renderActionPanel();
+    box.replaceChildren(
+      el('h4', { textContent: `「${origin.label}」の地点を調べた結果（目安）` }),
+      el('ul', {}, ...lines.map((t) => el('li', { textContent: t }))),
+      el('p', { className: 'fine', textContent: '「入っている」と分かった項目だけを上の質問で選びました。区域の境目の近くでは、ずれることがあります。見つからなかったことは、安全という意味ではありません。必ずハザードマップでも確かめてください。出典：ハザードマップポータルサイト（国土交通省）' }),
+      el('details', {}, el('summary', { textContent: '調べた地図データ（答え合わせ用）' }),
+        el('div', { className: 'detail-body' }, el('ul', {}, ...Object.values(r).flatMap((x) => x.layers).map((t) => el('li', { className: 'fine', textContent: t }))))),
+    );
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '住所から自動で調べる（試験中）';
+  }
+}
+
 // ---------- 家族に合わせた表示 ----------
 
 function applyConditionals() {
@@ -1698,6 +1809,7 @@ function init() {
     e.target.value = '';
   });
   $('#clear-all').addEventListener('click', clearAll);
+  $('#auto-hazard').addEventListener('click', runAutoHazard);
 
   const familyForm = $('#family-form');
   familyForm.addEventListener('input', () => {
