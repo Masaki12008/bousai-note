@@ -418,3 +418,7 @@ ruby.auto-ruby rt { font-size: 0.55em; font-weight: 400; }
 }
 .geo-btn { align-self: flex-start; }
 #panel-evac .search-box { margin-top: 8px; }
+.map-choice { background: none; border: none; border-radius: 0; flex-basis: 100%; }
+.map-choice > summary.btn { display: inline-flex; min-height: 44px; padding: 0 36px 0 14px; }
+.map-choice > summary.btn::after { right: 14px; width: 8px; height: 8px; border-width: 0 2.5px 2.5px 0; }
+.map-choice-links { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; padding: 8px; border: 1px dashed var(--line); border-radius: 12px; }

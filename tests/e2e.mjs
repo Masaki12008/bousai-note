@@ -52,6 +52,9 @@ ok(cards.length === 6 && !cards.includes('津波') && !cards.includes('火山の
 const none = await p.textContent('#evac-results');
 ok(none.includes('津波：10km以内に避難場所の指定はありません') && none.includes('海から離れた地域'), '内陸で津波の避難場所がないときは、内陸向けの説明を出す');
 ok(none.includes('10km以内にデータがなかった災害：火山の噴火'), '10kmより遠い避難場所は出さない');
+await p.click('.evac-card .map-choice summary >> nth=0');
+const mapApps = await p.$$eval('.evac-card .map-choice[open] .map-choice-links a', (l) => l.map((a) => a.textContent + '|' + a.href));
+ok(mapApps.some((x) => x.startsWith('Googleマップ|https://www.google.com/maps/')) && mapApps.some((x) => x.startsWith('Appleマップ|https://maps.apple.com/')) && mapApps.some((x) => x.startsWith('地理院地図|')), '地図で場所を見る：Googleマップ・Appleマップ・地理院地図から選べる');
 ok(!(await p.content()).includes('google.com/maps/dir'), 'Googleの徒歩ルートへのリンクがない');
 // 避難先にする
 await p.click('.evac-card:has(h3:text-is("洪水")) button');

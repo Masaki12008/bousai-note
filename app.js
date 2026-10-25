@@ -551,6 +551,30 @@ async function fetchSites(layer, origin) {
   return { sites: near.slice(0, NEAREST_COUNT), failed: !tiles.every((t) => t.ok) && near.length === 0 };
 }
 
+// 「地図で場所を見る」：使い慣れた地図アプリを選べるようにする（送るのは避難場所の位置だけ）
+const IS_APPLE = /iPhone|iPad|Macintosh/.test(navigator.userAgent);
+const IS_ANDROID = /Android/.test(navigator.userAgent);
+
+function mapLinks(s) {
+  const name = encodeURIComponent(s.name);
+  const links = [
+    ['Googleマップ', `https://www.google.com/maps/search/?api=1&query=${s.lat},${s.lon}`],
+    ['Appleマップ', `https://maps.apple.com/?ll=${s.lat},${s.lon}&q=${name}`],
+    ['地理院地図', `https://maps.gsi.go.jp/#17/${s.lat}/${s.lon}/`],
+  ];
+  if (IS_ANDROID) links.unshift(['ほかの地図アプリ', `geo:${s.lat},${s.lon}?q=${s.lat},${s.lon}(${name})`]);
+  // Appleマップは iPhone・Mac で使うので、それ以外では後ろに回す
+  if (!IS_APPLE) links.push(links.splice(links.findIndex(([label]) => label === 'Appleマップ'), 1)[0]);
+  return links;
+}
+
+function mapChooser(s) {
+  const box = el('details', { className: 'map-choice' }, el('summary', { className: 'btn small', textContent: '地図で場所を見る' }));
+  box.append(el('div', { className: 'map-choice-links' }, ...mapLinks(s).map(([label, href]) =>
+    el('a', { className: 'btn small', href, target: href.startsWith('geo:') ? '' : '_blank', rel: 'noopener', textContent: label }))));
+  return box;
+}
+
 function formatKm(km) {
   return km < 1 ? `約${Math.round((km * 1000) / 10) * 10}m` : `約${km.toFixed(1)}km`;
 }
@@ -577,7 +601,7 @@ function renderEvac(evac, { isHome }) {
       const ul = el('ul', { className: 'evac-sites' });
       for (const s of r.sites) {
         const actions = el('div', { className: 'site-actions' },
-          el('a', { className: 'btn small', href: `https://maps.gsi.go.jp/#17/${s.lat}/${s.lon}/`, target: '_blank', rel: 'noopener', textContent: '地図で場所を見る' }),
+          mapChooser(s),
           el('a', { className: 'btn small', href: `https://disaportal.gsi.go.jp/maps/?ll=${s.lat},${s.lon}&z=15`, target: '_blank', rel: 'noopener', textContent: 'ハザードマップで確認' }));
         if (group) {
           const pick = el('button', { type: 'button', className: 'btn small', textContent: `${group.short}の避難先にする` });
